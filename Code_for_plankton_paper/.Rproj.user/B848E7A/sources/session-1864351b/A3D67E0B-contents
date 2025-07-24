@@ -1,0 +1,173 @@
+---
+title: "PICPOC_HinfLBuli_plots"
+author: "Anne Kruijt"
+date: "2025-01-07"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+# Loading relevant packages
+```{r}
+
+library(ggplot2)
+require(reshape2)
+library(ggpubr)
+library(grid)
+library(dplyr)
+library(viridis)
+library(readxl)
+library(patchwork)
+library(cowplot)
+library(tidyverse)
+```
+
+
+# Reading in data
+
+```{r}
+
+# Plankton data
+PICPOCdata <- read.csv("data_files_for_plotting/Dataframe_PICPOC_HinfLBuli.csv", sep=';')
+
+```
+
+# creating separate data frames
+``` {r}
+
+dataHINF_adult <- PICPOCdata %>%
+  filter(plankton.type == "H. Inflatus", stage == "adult") %>%
+  pivot_wider(names_from = PICorPOC, values_from = value) %>%
+  rename(POC_per_individual = POC, PIC_per_individual = PIC)
+
+dataLBULI_adult <- PICPOCdata %>%
+  filter(plankton.type == "L. Bulimoides", stage == "adult") %>%
+  pivot_wider(names_from = PICorPOC, values_from = value) %>%
+  rename(POC_per_individual = POC, PIC_per_individual = PIC)
+
+dataHINF_juv <- PICPOCdata %>%
+  filter(plankton.type == "H. Inflatus", stage == "juvenile") %>%
+  pivot_wider(names_from = PICorPOC, values_from = value) %>%
+  rename(POC_per_individual = POC, PIC_per_individual = PIC)
+
+dataLBULI_juv <- PICPOCdata %>%
+  filter(plankton.type == "L. Bulimoides", stage == "juvenile") %>%
+  pivot_wider(names_from = PICorPOC, values_from = value) %>%
+  rename(POC_per_individual = POC, PIC_per_individual = PIC)
+
+```
+
+# Linear regression equation (to be pasted as text in each of the plots)
+```{r}
+
+# function to calculate the linear relationship between PIC and POC, forcing the line through 0,0  (if there is no PIC, there is no POC)
+Equation_func <- function(PIC, POC, dataset) {
+  fit <- lm(PIC ~ POC + 0, data = dataset) # adding + 0 tells the model to go through the origin
+summary_fit <- summary(fit)
+
+# Extract regression equation and R² value
+eq <- paste0(
+  "y = ", round(summary_fit$coefficients[1], 4), "x", 
+  "\nR² = ", round(summary_fit$r.squared, 4)
+)
+
+}
+# calculating the linear fit for all four groups
+Hinf_a_eq <- Equation_func(dataHINF_adult$PIC_per_individual, dataHINF_adult$POC_per_individual, dataHINF_adult )
+Lbuli_a_eq <- Equation_func(dataLBULI_adult$PIC_per_individual, dataLBULI_adult$POC_per_individual, dataLBULI_adult )
+Hinf_j_eq <- Equation_func(dataHINF_juv$PIC_per_individual, dataHINF_juv$POC_per_individual, dataHINF_juv )
+Lbuli_j_eq <- Equation_func(dataLBULI_juv$PIC_per_individual, dataLBULI_juv$POC_per_individual, dataLBULI_juv )
+
+```
+
+# calculating the standard error on each of the slopes
+```{r}
+# enter the dataset you want to study
+PIC <- dataLBULI_adult$PIC_per_individual
+POC <- dataLBULI_adult$POC_per_individual
+dataset <- dataLBULI_adult 
+
+# calculate the regression line through the measured points
+fit <- lm(PIC ~ POC + 0, data = dataset )# adding + 0 tells the model to go through the origin
+summary_fit <- summary(fit)
+
+Std.Error <- summary_fit$coefficients[2]
+summary_fit # print on screen
+
+```
+
+
+```{r}
+  
+# Plot with color by station
+pHINF_a <- ggplot(dataHINF_adult, aes(x = POC_per_individual, y = PIC_per_individual, color = as.factor(station))) +
+  geom_point(size = 2) + 
+  geom_smooth(method = lm, linetype = "dotted", se = FALSE, formula = y ~ x +0, color = "black") +
+  annotate("text", x = 0.011, y = 0.015, label = Hinf_a_eq, size = 3, hjust = 0) +
+  labs(title = "H. inflatus adult", y = "PIC per individual [mg]", x = "POC per individual [mg]", color = "Station") +
+  xlim(0, 0.035) +
+  ylim(0, 0.020) +
+  theme_minimal() +
+  theme(
+    axis.title.x = element_blank(),
+    axis.title = element_text(size = 10)
+  )
+
+pHINF_j <- ggplot(dataHINF_juv, aes(x = POC_per_individual, y = PIC_per_individual, color = as.factor(station))) +
+  geom_point(size = 2) + 
+  geom_smooth(method = lm, linetype = "dotted", se = FALSE, formula = y ~ x +0, color = "black") +
+  annotate("text", x = 0.001, y = 0.0015, label = Hinf_j_eq, size = 3, hjust = 0) +
+  labs(title = "H. inflatus juvenile", y = "PIC per individual [mg]", color = "Station") +
+  xlim(0, 0.0055) +
+  ylim(0, 0.0025) +
+  theme_minimal() +
+  theme(
+    axis.title.x = element_blank(),
+    axis.title.y = element_blank(),
+    axis.title = element_text(size = 10)
+  )
+
+
+pLBULI_a <- ggplot(dataLBULI_adult, aes(x = POC_per_individual, y = PIC_per_individual, color = as.factor(station))) +
+  geom_point(size = 2) + 
+  geom_smooth(method = lm, linetype = "dotted", se = FALSE, formula = y ~ x +0, color = "black") +
+  annotate("text", x = 0.011, y = 0.02, label = Lbuli_a_eq, size = 3, hjust = 0) +
+  labs(title = "L. bulimoides adult", y = "PIC per individual [mg]",x = "POC per individual [mg]", color = "Station") +
+  xlim(0, 0.03) +
+  ylim(0, 0.025) +
+  theme_minimal() +
+  theme(
+    axis.title = element_text(size = 10)
+  )
+
+
+pLBULI_j <- ggplot(dataLBULI_juv, aes(x = POC_per_individual, y = PIC_per_individual, color = as.factor(station))) +
+  geom_point(size = 2) + 
+  geom_smooth(method = lm, linetype = "dotted", se = FALSE, formula = y ~ x + 0 , color = "black") +
+  annotate("text", x = 0.00010, y = 0.00050, label = Lbuli_j_eq, size = 3, hjust = 0) +
+  labs(title = "L. bulimoides juvenile", y = "PIC per individual [mg]", x = "POC per individual [mg]", color = "Station") +
+  xlim(0, 0.0013) +
+  ylim(0, 0.0015) +
+  theme_minimal() +
+  theme(
+    axis.title.y = element_blank(),
+    axis.title = element_text(size = 10)
+  )
+
+
+# Arrange plots
+finalplot <- ggarrange(pHINF_a, pHINF_j, pLBULI_a, pLBULI_j,
+          labels = c("A", "B", "C", "D"),
+          ncol = 2, nrow = 2,
+          common.legend = TRUE, legend = "bottom") # Keep a common legend
+
+# Save figure as file
+#ggsave("PICPOC_HinfLbuli_plot.pdf", finalplot, width = 8, height = 6, dpi = 300)
+
+finalplot
+
+
+```

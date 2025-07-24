@@ -1,0 +1,169 @@
+---
+title: "MC_production"
+author: "Anne Kruijt"
+date: "2025-02-04"
+output: html_document
+---
+# Script written with help of AI, but checked by author
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+# FUNCTION USED
+```{r}
+
+# Load required library
+library(ggplot2)
+
+# Monte Carlo function that returns production samples & confidence intervals
+monte_carlo_production <- function(ss_mean, ss_uncertainty_fraction, tt_low, tt_high, n_simulations = 100000, confidence_level = 0.95) {
+  # Set seed for reproducibility
+  set.seed(123)
+
+  ss_uncertainty <- ss_uncertainty_fraction * ss_mean
+  
+  # Generate random samples for SS (Standing Stock)
+  ss_samples <- if (ss_uncertainty > 0) {
+    rnorm(n_simulations, mean = ss_mean, sd = ss_uncertainty)
+  } else {
+    rep(ss_mean, n_simulations)
+  }
+  
+  # Generate random samples for TT (Turnover Time) - Uniform distribution
+  tt_samples <- runif(n_simulations, min = tt_low, max = tt_high)
+
+  # Compute Production: P = SS / TT
+  production_samples <- ss_samples / tt_samples
+
+  # Compute statistics
+  mean_production <- mean(production_samples)
+  std_production <- sd(production_samples)
+
+  # Compute Confidence Interval
+  z_value <- qnorm(1 - (1 - confidence_level) / 2)  # Z-score for given confidence level
+  error_margin <- z_value * (std_production / sqrt(n_simulations))
+  ci_lower <- mean_production - error_margin
+  ci_upper <- mean_production + error_margin
+
+  # Save results as a data frame
+  results <- data.frame(
+    production_samples = production_samples,
+    ci_lower = ci_lower,
+    ci_upper = ci_upper
+  )
+
+  # Print summary
+  cat(sprintf("Estimated Production: %.6f units\n", mean_production))
+  cat(sprintf("Uncertainty (Standard Deviation): %.6f units\n", std_production))
+  cat(sprintf("%.0f%% Confidence Interval: [%.6f, %.6f] units\n", confidence_level * 100, ci_lower, ci_upper))
+
+  # Return results
+  return(results)
+}
+
+
+
+```
+
+# Loading data
+
+```{r}
+
+# Load required libraries
+library(ggplot2)
+library(readxl)
+
+# Set seed for reproducibility
+set.seed(123)
+
+
+# Plankton data
+SS_all <- read_xlsx("data_files_for_plotting/Standingstocks_for_MC_CALCULATIONS.xlsx")
+
+
+
+# extract data
+SS_st6_gastro <- SS_all$`SSm2 [mg/m2]`[SS_all$station == 6 & SS_all$group == "gastropod total"]
+SS_st9_gastro <- SS_all$`SSm2 [mg/m2]`[SS_all$station == 9 & SS_all$group == "gastropod total"]
+SS_av_gastro <- (SS_st6_gastro + SS_st9_gastro )/2
+SS_st6_foram <- SS_all$`SSm2 [mg/m2]`[SS_all$station == 6 & SS_all$group == "foraminifera total"]
+SS_st9_foram <- SS_all$`SSm2 [mg/m2]`[SS_all$station == 9 & SS_all$group == "foraminifera total"]
+SS_av_foram <- (SS_st6_foram + SS_st9_foram )/2
+SS_st6_cocco <- SS_all$`SSm2 [mg/m2]`[SS_all$station == 6 & SS_all$group == "coccosphere"]
+SS_st9_cocco <- SS_all$`SSm2 [mg/m2]`[SS_all$station == 9 & SS_all$group == "coccosphere"]
+SS_av_cocco <- (SS_st6_cocco + SS_st9_cocco )/2
+
+
+```
+
+# For gastropods
+```{r}
+
+tt_low_g <- 5
+tt_high_g <- 16
+tt_low_f <- 14
+tt_high_f <- 28
+tt_low_c <- 0.6
+tt_high_c <- 10
+
+
+
+results_gastropods <- monte_carlo_production(SS_av_gastro, ss_uncertainty =  0.25, tt_low =  tt_low_g, tt_high = tt_high_g, n_simulations = 100000, confidence_level = 0.95 )
+
+results_forams <- monte_carlo_production(SS_av_foram, ss_uncertainty =  0.25, tt_low =  tt_low_f, tt_high = tt_high_f, n_simulations = 100000, confidence_level = 0.95 )
+
+results_cocco <- monte_carlo_production(SS_av_cocco, ss_uncertainty =  0.25, tt_low =  tt_low_c, tt_high = tt_high_c, n_simulations = 100000, confidence_level = 0.95 )
+
+
+```
+
+```{r}
+
+prod <- results_cocco$production_samples
+ci_l <- results_cocco$ci_lower
+ci_u <- results_cocco$ci_upper
+# Plot histogram of production results with CI lines
+p_cocco_ss <- ggplot(data.frame(prod), aes(x = prod)) +
+  geom_histogram(bins = 50, fill = "steelblue", alpha = 0.7, color = "black") +
+  geom_vline(xintercept = ci_l, color = "red", linetype = "dashed", linewidth = 0.01) +
+  geom_vline(xintercept = ci_u, color = "red", linetype = "dashed", linewidth = 0.01) +
+  labs(title = "Monte Carlo Simulation: Production distribution coccolithophores, tt 5-16 days",
+       x = "Production [mg/m2/day]", y = "Frequency") +
+  theme_minimal()
+
+prod <- results_gastropods$production_samples
+ci_l <- results_gastropods$ci_lower
+ci_u <- results_gastropods$ci_upper
+# Plot histogram of production results with CI lines
+p_gastro_ss <- ggplot(data.frame(prod), aes(x = prod)) +
+  geom_histogram(bins = 50, fill = "steelblue", alpha = 0.7, color = "black") +
+  geom_vline(xintercept = ci_l, color = "red", linetype = "dashed", linewidth = 0.01) +
+  geom_vline(xintercept = ci_u, color = "red", linetype = "dashed", linewidth = 0.01) +
+  labs(title = "Monte Carlo Simulation: Production distribution gastropods, tt 0.6-10 days",
+       x = "Production [mg/m2/day]", y = "Frequency") +
+  theme_minimal()
+
+prod <- results_forams$production_samples
+ci_l <- results_forams$ci_lower
+ci_u <- results_forams$ci_upper
+# Plot histogram of production results with CI lines
+p_foram_ss <- ggplot(data.frame(prod), aes(x = prod)) +
+  geom_histogram(bins = 50, fill = "steelblue", alpha = 0.7, color = "black") +
+  geom_vline(xintercept = ci_l, color = "red", linetype = "dashed", linewidth = 0.01) +
+  geom_vline(xintercept = ci_u, color = "red", linetype = "dashed", linewidth = 0.01) +
+  labs(title = "Monte Carlo Simulation: Production distribution Foraminifera, tt 14-28 days ",
+       x = "Production [mg/m2/day]", y = "Frequency") +
+  theme_minimal()
+
+
+# save to pdf or png
+
+
+#ggsave("MC_SS_gastropod.png", p_gastro_ss, width = 8, height = 6, dpi = 300)
+#ggsave("MC_SS_foram.png", p_foram_ss, width = 8, height = 6, dpi = 300)
+#ggsave("MC_SS_coccosphere.png", p_cocco_ss, width = 8, height = 6, dpi = 300)
+
+```
+

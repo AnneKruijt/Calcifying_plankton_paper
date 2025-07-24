@@ -1,0 +1,6 @@
+"0",""
+"0","Df_Coccolith <- Planktondata[Planktondata$plankton == ""coccolith"", ]"
+"0",""
+"0","Df_Coccolithophore <- Planktondata[Planktondata$plankton == ""coccolithophore"", ]"
+"0",""
+"0",""

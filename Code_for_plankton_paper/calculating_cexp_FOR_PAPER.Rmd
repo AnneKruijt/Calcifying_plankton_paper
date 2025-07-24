@@ -1,0 +1,115 @@
+---
+title: "calculating_cexp"
+author: "Anne Kruijt"
+date: "2025-07-07"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# read in data
+```{r}
+
+# Read in plankton data
+Planktondata <- read.csv("data_files_for_plotting/All_plankton_PIC_station_3_4_6_9_FOR_PUBLICATION.csv", sep = ";")
+
+
+```
+
+# extract subsets from the data file
+```{r}
+
+# Gastropods
+#Full
+
+st6_Gastropod_juv  <- Planktondata[Planktondata$plankton == "gastropod" & Planktondata$station == 6  & Planktondata$stage == "juvenile" & Planktondata$shell == "full", ]
+st6_Gastropod_adult  <- Planktondata[Planktondata$plankton == "gastropod" & Planktondata$station == 6  & Planktondata$stage == "adult" & Planktondata$shell == "full", ]
+
+st9_Gastropod_juv  <- Planktondata[Planktondata$plankton == "gastropod" & Planktondata$station == 9  & Planktondata$stage == "juvenile" & Planktondata$shell == "full", ]
+st9_Gastropod_adult  <- Planktondata[Planktondata$plankton == "gastropod" & Planktondata$station == 9  & Planktondata$stage == "adult" & Planktondata$shell == "full", ]
+
+#Empty
+
+st6_Gastropod_juv_e  <- Planktondata[Planktondata$plankton == "gastropod" & Planktondata$station == 6  & Planktondata$stage == "juvenile" & Planktondata$shell == "empty", ]
+st6_Gastropod_adult_e  <- Planktondata[Planktondata$plankton == "gastropod" & Planktondata$station == 6  & Planktondata$stage == "adult" & Planktondata$shell == "empty", ]
+
+st9_Gastropod_juv_e  <- Planktondata[Planktondata$plankton == "gastropod" & Planktondata$station == 9  & Planktondata$stage == "juvenile" & Planktondata$shell == "empty", ]
+st9_Gastropod_adult_e  <- Planktondata[Planktondata$plankton == "gastropod" & Planktondata$station == 9  & Planktondata$stage == "adult" & Planktondata$shell == "empty", ]
+
+
+# Foraminifera
+# Full
+
+
+st6_foram_small  <- Planktondata[Planktondata$plankton == "foram" & Planktondata$station == 6  & Planktondata$stage == "small" & Planktondata$shell == "full", ]
+st6_foram_large  <- Planktondata[Planktondata$plankton == "foram" & Planktondata$station == 6  & Planktondata$stage == "large" & Planktondata$shell == "full", ]
+
+st9_foram_small  <- Planktondata[Planktondata$plankton == "foram" & Planktondata$station == 9  & Planktondata$stage == "small" & Planktondata$shell == "full", ]
+st9_foram_large <- Planktondata[Planktondata$plankton == "foram" & Planktondata$station == 9  & Planktondata$stage == "large" & Planktondata$shell == "full", ]
+
+#Empty
+
+st6_foram_small_e  <- Planktondata[Planktondata$plankton == "foram" & Planktondata$station == 6  & Planktondata$stage == "small" & Planktondata$shell == "empty", ]
+st6_foram_large_e  <- Planktondata[Planktondata$plankton == "foram" & Planktondata$station == 6  & Planktondata$stage == "large" & Planktondata$shell == "empty", ]
+
+st9_foram_small_e  <- Planktondata[Planktondata$plankton == "foram" & Planktondata$station == 9  & Planktondata$stage == "small" & Planktondata$shell == "empty", ]
+st9_foram_large_e  <- Planktondata[Planktondata$plankton == "foram" & Planktondata$station == 9  & Planktondata$stage == "large" & Planktondata$shell == "empty", ]
+
+
+# Coccoliths and coccospheres
+
+st34_coccosphere <- Planktondata[Planktondata$plankton == "coccolithophore",]
+st34_coccolith <- Planktondata[Planktondata$plankton == "coccolith",]
+
+```
+
+# Extract filtered volumes
+
+```{r}
+
+st6_volume = st6_Gastropod_juv$volume_sampeled
+st9_volume = st9_Gastropod_juv$volume_sampeled
+st34_volume = st34_coccosphere$volume_sampeled
+
+```
+
+# Calculate Cexp
+- sum up all the PIC_total related to FULL shells in the export range (below base of productive zone)
+- divide this by the volume filtered within this range
+- sum up all the PIC_total related to EMPTY shells in the entire sampled water column
+- divide this by the total volume of filtered water
+- sum both concentrations to get the average export concentration over the entire sampled water column
+
+```{r}
+
+# for gastropods
+
+Cexp_st6_gastropod_j <- ( st6_Gastropod_juv[st6_Gastropod_juv$net == 2, ]$PIC_total + st6_Gastropod_juv[st6_Gastropod_juv$net == 1, ]$PIC_total ) / (st6_volume[4] + st6_volume[5]) + sum(st6_Gastropod_juv_e$PIC_total) /(sum(st6_volume)) # volume[4] and volume[5] relate to nets 2 and 1
+  
+Cexp_st6_gastropod_a <- ( st6_Gastropod_adult[st6_Gastropod_adult$net == 2, ]$PIC_total + st6_Gastropod_adult[st6_Gastropod_adult$net == 1, ]$PIC_total ) / (st6_volume[4] + st6_volume[5]) + sum(st6_Gastropod_adult_e$PIC_total) /(sum(st6_volume))
+
+
+Cexp_st9_gastropod_j <- ( st9_Gastropod_juv[st9_Gastropod_juv$net == 2, ]$PIC_total + st9_Gastropod_juv[st9_Gastropod_juv$net == 1, ]$PIC_total ) / (st9_volume[4] + st9_volume[5]) + sum(st9_Gastropod_juv_e$PIC_total) /(sum(st9_volume))
+  
+Cexp_st9_gastropod_a <- ( st9_Gastropod_adult[st9_Gastropod_adult$net == 2, ]$PIC_total + st9_Gastropod_adult[st9_Gastropod_adult$net == 1, ]$PIC_total ) / (st9_volume[4] + st9_volume[5]) + sum(st9_Gastropod_adult_e$PIC_total) /(sum(st9_volume))
+
+
+# for forams
+
+Cexp_st6_foram_small <- ( st6_foram_small[st6_foram_small$net == 4, ]$PIC_total + st6_foram_small[st6_foram_small$net == 3, ]$PIC_total + st6_foram_small[st6_foram_small$net == 2, ]$PIC_total + st6_foram_small[st6_foram_small$net == 1, ]$PIC_total ) / ( st6_volume[2] + st6_volume[3] + st6_volume[4] + st6_volume[5]) + sum(st6_foram_small_e$PIC_total) /(sum(st6_volume))
+
+Cexp_st6_foram_large <- ( st6_foram_large[st6_foram_large$net == 4, ]$PIC_total + st6_foram_large[st6_foram_large$net == 3, ]$PIC_total + st6_foram_large[st6_foram_large$net == 2, ]$PIC_total + st6_foram_large[st6_foram_large$net == 1, ]$PIC_total ) / ( st6_volume[2] + st6_volume[3] + st6_volume[4] + st6_volume[5]) + sum(st6_foram_large_e$PIC_total) /(sum(st6_volume))
+
+Cexp_st9_foram_small <- ( st9_foram_small[st9_foram_small$net == 4, ]$PIC_total + st9_foram_small[st9_foram_small$net == 3, ]$PIC_total + st9_foram_small[st9_foram_small$net == 2, ]$PIC_total + st9_foram_small[st9_foram_small$net == 1, ]$PIC_total ) / ( st9_volume[2] + st9_volume[3] + st9_volume[4] + st9_volume[5]) + sum(st9_foram_small_e$PIC_total) /(sum(st9_volume))
+
+Cexp_st9_foram_large <- ( st9_foram_large[st9_foram_large$net == 4, ]$PIC_total + st9_foram_large[st9_foram_large$net == 3, ]$PIC_total + st9_foram_large[st9_foram_large$net == 2, ]$PIC_total + st9_foram_large[st9_foram_large$net == 1, ]$PIC_total ) / ( st9_volume[2] + st9_volume[3] + st9_volume[4] + st9_volume[5]) + sum(st9_foram_large_e$PIC_total) /(sum(st9_volume))
+
+
+# calculating Cexp in the top 1000m of the water column. This means taking the first 7 cells (0-1000m depth) in the case of Coccoliths, and the 4-7 cell for Coccospheres (below DCM)
+
+st34_Cexp_coccolith <- sum(na.omit(st34_coccolith$PIC_total[1:7])) / sum(na.omit(st34_volume[1:7])) # we omit NaN at 175 and 3000m, related to incorrect measurements
+st34_Cexp_coccosphere <- sum(st34_coccosphere$PIC_total[4:7]) / sum(st34_volume[4:7])
+
+```

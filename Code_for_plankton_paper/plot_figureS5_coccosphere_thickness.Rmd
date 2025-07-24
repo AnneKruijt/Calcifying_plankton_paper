@@ -1,0 +1,48 @@
+---
+title: "Thickness_spheres_plot"
+author: "Anne Kruijt"
+date: "2025-07-11"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#load packages
+```{r}
+
+library(ggplot2)
+library("readxl")
+library(ggpubr)
+
+```
+
+
+# Import data
+```{r}
+data <- read_excel("data_files_for_plotting/Thickness_sphere_FOR_PLOTTING.xlsx" )
+
+```
+
+# Make data frame
+```{r}
+
+df <- na.omit(data.frame(
+  Depth = -1* data$`Depth 3` ,
+  value = data$`Csph thickness (µm)`
+))
+
+
+
+plot <- ggplot( data = df, aes(y = value, x = Depth)) +
+  geom_point( color = "black", size =2 )+
+  geom_line(color = "black", size =1)+
+  xlim(-5000, 0) +
+  ylim(1,2) +
+  labs(y = 'Sphere thickness [µm]', x = 'Depth [m]') +
+  theme_classic()+
+  coord_flip()
+
+plot
+```

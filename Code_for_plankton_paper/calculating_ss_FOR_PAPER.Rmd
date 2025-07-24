@@ -1,0 +1,91 @@
+---
+title: "SS_cexp_calculation"
+author: "Anne Kruijt"
+date: "2025-07-07"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# reading in files
+
+```{r}
+
+# Plankton data
+Planktondata <- read.csv("data_files_for_plotting/All_plankton_PIC_station_3_4_6_9_FOR_PUBLICATION.csv", sep = ";")
+
+```
+
+
+
+# steps to calculate gastropod standing stock
+```{r}
+# set the integration depth (bottom of the productive layer)
+integrationdepth_gastropods <- 300
+integrationdepth_forams <- 150
+integrationdepth_coccosphere <- 175
+
+# separate data into different sub sets
+
+st6_Gastropod_juv  <- Planktondata[Planktondata$plankton == "gastropod" & Planktondata$station == 6  & Planktondata$stage == "juvenile" & Planktondata$shell == "full", ]
+
+st6_Gastropod_adult  <- Planktondata[Planktondata$plankton == "gastropod" & Planktondata$station == 6  & Planktondata$stage == "adult" & Planktondata$shell == "full", ]
+
+st9_Gastropod_juv  <- Planktondata[Planktondata$plankton == "gastropod" & Planktondata$station == 9  & Planktondata$stage == "juvenile" & Planktondata$shell == "full", ]
+
+st9_Gastropod_adult  <- Planktondata[Planktondata$plankton == "gastropod" & Planktondata$station == 9  & Planktondata$stage == "adult" & Planktondata$shell == "full", ]
+
+st6_foram_small  <- Planktondata[Planktondata$plankton == "foram" & Planktondata$station == 6  & Planktondata$stage == "small" & Planktondata$shell == "full", ] 
+
+st6_foram_large  <- Planktondata[Planktondata$plankton == "foram" & Planktondata$station == 6  & Planktondata$stage == "large" & Planktondata$shell == "full", ]
+
+st9_foram_small  <- Planktondata[Planktondata$plankton == "foram" & Planktondata$station == 9  & Planktondata$stage == "small" & Planktondata$shell == "full", ]
+
+st9_foram_large  <- Planktondata[Planktondata$plankton == "foram" & Planktondata$station == 9  & Planktondata$stage == "large" & Planktondata$shell == "full", ]
+
+st34_coccosphere <- Planktondata[Planktondata$plankton == "coccolithophore",]
+
+# extract sampled volume for each station
+st6_volume = st6_Gastropod_juv$volume_sampeled
+st9_volume = st9_Gastropod_juv$volume_sampeled
+st34_volume = st34_coccosphere$volume_sampeled
+
+```
+
+# calculate standing stock [PIC m-2]
+- sum up the total PIC in each net within the productive layer ($PIC_total)
+- divide by the total volume sampled within this depth interval (volume[1] + volume[..])
+- multiply by the integration depth
+
+```{r}
+# for gastropods at station 6
+SS_st6_Gastropod_juv <- (st6_Gastropod_juv[st6_Gastropod_juv$net == 5, ]$PIC_total + st6_Gastropod_juv[st6_Gastropod_juv$net == 4, ]$PIC_total + st6_Gastropod_juv[st6_Gastropod_juv$net == 3, ]$PIC_total ) / (st6_volume[1] + st6_volume[2] + st6_volume[3]) * integrationdepth_gastropods # [1], [2], [3] are the volumes corresponding to net 5, 4, and 3
+
+SS_st6_Gastropod_adult <- (st6_Gastropod_adult[st6_Gastropod_adult$net == 5, ]$PIC_total + st6_Gastropod_adult[st6_Gastropod_adult$net == 4, ]$PIC_total + st6_Gastropod_adult[st6_Gastropod_adult$net == 3, ]$PIC_total ) / (st6_volume[1] + st6_volume[2] + st6_volume[3]) * integrationdepth_gastropods
+
+# for gastropods at station 9
+SS_st9_Gastropod_juv <- (st9_Gastropod_juv[st9_Gastropod_juv$net == 5, ]$PIC_total + st9_Gastropod_juv[st9_Gastropod_juv$net == 4, ]$PIC_total + st9_Gastropod_juv[st9_Gastropod_juv$net == 3, ]$PIC_total ) / (st9_volume[1] + st9_volume[2] + st9_volume[3]) * integrationdepth_gastropods
+SS_st9_Gastropod_adult <- (st9_Gastropod_adult[st9_Gastropod_adult$net == 5, ]$PIC_total + st9_Gastropod_adult[st9_Gastropod_adult$net == 4, ]$PIC_total + st9_Gastropod_adult[st9_Gastropod_adult$net == 3, ]$PIC_total ) / (st9_volume[1] + st9_volume[2] + st9_volume[3]) * integrationdepth_gastropods
+
+# for forams at station 6
+
+SS_st6_foram_small <- st6_foram_small[st6_foram_small$net == 5, ]$PIC_total / st6_volume[1]  * integrationdepth_forams
+SS_st6_foram_large <- st6_foram_large[st6_foram_large$net == 5, ]$PIC_total  /   st6_volume[1]* integrationdepth_forams
+
+# for forams at station 9
+
+SS_st9_foram_small <- st9_foram_small[st9_foram_small$net == 5, ]$PIC_total  / st9_volume[1] * integrationdepth_forams
+SS_st9_foram_large <- st9_foram_large[st9_foram_large$net == 5, ]$PIC_total / st9_volume[1] * integrationdepth_forams
+
+# for coccolithophores
+
+# assuming a linear decrease in coccosphere concentration below the DCM (at 100). We did not have an accurate measurement at 175m, so we estimate the value in between 100 and 250 and assume a linear decrease in concentration -->
+coccosphere_conc_175 <- (st34_coccosphere[st34_coccosphere$depth_average == 250, ]$PIC_conc -  st34_coccosphere[st34_coccosphere$depth_average == 100,]$PIC_conc)  / (250-100) * (175-100) + st34_coccosphere[st34_coccosphere$depth_average ==100,]$PIC_conc 
+
+# calculating standing stock using PIC totals at depths 5, 100 and 175 (reconstructed) and assuming same filter volume for depth 100 and 175
+SS_coccosphere <- ( st34_coccosphere[st34_coccosphere$depth_average == 5, ]$PIC_total + st34_coccosphere[st34_coccosphere$depth_average == 100, ]$PIC_total + coccosphere_conc_175*st34_volume[2] )/ (st34_volume[1] + st34_volume[2] + st34_volume[2]) * integrationdepth_coccosphere
+
+```
+

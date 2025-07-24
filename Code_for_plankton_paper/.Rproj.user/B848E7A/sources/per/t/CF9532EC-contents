@@ -1,0 +1,239 @@
+---
+title: "PIC_forams_gastropods_nets_plot"
+author: "Anne Kruijt"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Loading relevant packages
+```{r}
+
+library(ggplot2)
+require(reshape2)
+library(ggpubr)
+library(grid)
+library(dplyr)
+library(viridis)
+library(readxl)
+library(patchwork)
+library(cowplot)
+```
+
+# Reading in data
+
+```{r}
+
+# Plankton data
+Planktondata <- read.csv("data_files_for_plotting/All_plankton_PIC_station_3_4_6_9_FOR_PUBLICATION.csv", sep = ";")
+
+# Adding fluorescence data
+Fluorescence <- read_excel("data_files_for_plotting/fluorescence-data.xlsx") 
+
+```
+
+# Creating separate datafames for each plankon type
+```{r}
+
+st6_Gastropod  <- Planktondata[Planktondata$plankton == "gastropod" & Planktondata$station == 6, ]
+st6_Foram <- Planktondata[Planktondata$plankton == "foram" & Planktondata$station == 6, ]
+st9_Gastropod  <- Planktondata[Planktondata$plankton == "gastropod" & Planktondata$station == 9, ]
+st9_Foram <- Planktondata[Planktondata$plankton == "foram" & Planktondata$station == 9, ]
+
+```
+
+# Calculating total PIC concentration at each depth for each plankton type
+```{r}
+
+# Here, for each plankton type, for each net I sum up ALL PIC, so both adult and juvenile (or for forams '125-200um, and '<200um'), and both from full and empty shells
+
+
+# calculating total per depth
+nets <- c(5,4,3,2,1)
+# empty arrays to be filled
+PIC_Gastropod_6 <- matrix(,nrow=5,ncol=1)
+PIC_Gastropod_9 <- matrix(,nrow=5,ncol=1)
+PIC_foram_6 <- matrix(,nrow=5,ncol=1)
+PIC_foram_9 <- matrix(,nrow=5,ncol=1)
+
+PIC_Gastropod_6_af <- matrix(,nrow=5,ncol=1)
+PIC_Gastropod_9_af <- matrix(,nrow=5,ncol=1)
+PIC_foram_6_af <- matrix(,nrow=5,ncol=1)
+PIC_foram_9_af <- matrix(,nrow=5,ncol=1)
+
+PIC_Gastropod_6_ae <- matrix(,nrow=5,ncol=1)
+PIC_Gastropod_9_ae <- matrix(,nrow=5,ncol=1)
+PIC_foram_6_ae <- matrix(,nrow=5,ncol=1)
+PIC_foram_9_ae <- matrix(,nrow=5,ncol=1)
+
+PIC_Gastropod_6_jf <- matrix(,nrow=5,ncol=1)
+PIC_Gastropod_9_jf <- matrix(,nrow=5,ncol=1)
+PIC_foram_6_jf <- matrix(,nrow=5,ncol=1)
+PIC_foram_9_jf <- matrix(,nrow=5,ncol=1)
+
+PIC_Gastropod_6_je <- matrix(,nrow=5,ncol=1)
+PIC_Gastropod_9_je <- matrix(,nrow=5,ncol=1)
+PIC_foram_6_je <- matrix(,nrow=5,ncol=1)
+PIC_foram_9_je <- matrix(,nrow=5,ncol=1)
+
+for (i in nets){
+  # totals
+  PIC_Gastropod_6[i,1] <-sum(st6_Gastropod[st6_Gastropod$net ==i, ]$PIC_total) / st6_Gastropod[st6_Gastropod$net ==i,]$volume_sampeled[1]
+  PIC_Gastropod_9[i,1] <-sum(st9_Gastropod[st9_Gastropod$net ==i, ]$PIC_total) /st9_Gastropod[st9_Gastropod$net ==i,]$volume_sampeled[1]
+  PIC_foram_6[i,1] <-sum(st6_Foram[st6_Foram$net ==i, ]$PIC_total) / st6_Foram[st6_Foram$net ==i,]$volume_sampeled[1]
+  PIC_foram_9[i,1] <-sum(st9_Foram[st9_Foram$net ==i, ]$PIC_total) / st9_Foram[st9_Foram$net ==i,]$volume_sampeled[1]
+  
+  #adult full
+  PIC_Gastropod_6_af[i,1] <-sum(st6_Gastropod[st6_Gastropod$net ==i & st6_Gastropod$stage == "adult" & st6_Gastropod$shell == "full",  ]$PIC_total) / st6_Gastropod[st6_Gastropod$net ==i,]$volume_sampeled[1]
+  PIC_Gastropod_9_af[i,1] <-sum(st9_Gastropod[st9_Gastropod$net ==i & st9_Gastropod$stage =="adult"& st9_Gastropod$shell =="full", ]$PIC_total) /st9_Gastropod[st9_Gastropod$net ==i,]$volume_sampeled[1]
+  
+  PIC_foram_6_af[i,1] <-sum(st6_Foram[st6_Foram$net ==i & st6_Foram$stage == "large" & st6_Foram$shell == "full", ]$PIC_total) / st6_Foram[st6_Foram$net ==i,]$volume_sampeled[1]
+  PIC_foram_9_af[i,1] <-sum(st9_Foram[st9_Foram$net ==i & st9_Foram$stage == "large" & st9_Foram$shell == "full", ]$PIC_total) / st9_Foram[st9_Foram$net ==i,]$volume_sampeled[1]
+  
+  #adult empty
+  PIC_Gastropod_6_ae[i,1] <-sum(st6_Gastropod[st6_Gastropod$net ==i & st6_Gastropod$stage == "adult" & st6_Gastropod$shell == "empty",  ]$PIC_total) / st6_Gastropod[st6_Gastropod$net ==i,]$volume_sampeled[1]
+  PIC_Gastropod_9_ae[i,1] <-sum(st9_Gastropod[st9_Gastropod$net ==i & st9_Gastropod$stage =="adult" & st9_Gastropod$shell =="empty", ]$PIC_total) /st9_Gastropod[st9_Gastropod$net ==i,]$volume_sampeled[1]
+  
+  PIC_foram_6_ae[i,1] <-sum(st6_Foram[st6_Foram$net ==i & st6_Foram$stage == "large" & st6_Foram$shell == "empty", ]$PIC_total) / st6_Foram[st6_Foram$net ==i,]$volume_sampeled[1]
+  PIC_foram_9_ae[i,1] <-sum(st9_Foram[st9_Foram$net ==i & st9_Foram$stage == "large" & st9_Foram$shell == "empty", ]$PIC_total) / st9_Foram[st9_Foram$net ==i,]$volume_sampeled[1]
+  
+  #juvenile full
+  PIC_Gastropod_6_jf[i,1] <-sum(st6_Gastropod[st6_Gastropod$net ==i & st6_Gastropod$stage == "juvenile" & st6_Gastropod$shell == "full",  ]$PIC_total) / st6_Gastropod[st6_Gastropod$net ==i,]$volume_sampeled[1]
+  PIC_Gastropod_9_jf[i,1] <-sum(st9_Gastropod[st9_Gastropod$net ==i & st9_Gastropod$stage =="juvenile" & st9_Gastropod$shell =="full", ]$PIC_total) /st9_Gastropod[st9_Gastropod$net ==i,]$volume_sampeled[1]
+  
+  PIC_foram_6_jf[i,1] <-sum(st6_Foram[st6_Foram$net ==i & st6_Foram$stage == "small" & st6_Foram$shell == "full", ]$PIC_total) / st6_Foram[st6_Foram$net ==i,]$volume_sampeled[1]
+  PIC_foram_9_jf[i,1] <-sum(st9_Foram[st9_Foram$net ==i & st9_Foram$stage == "small" & st9_Foram$shell == "full", ]$PIC_total) / st9_Foram[st9_Foram$net ==i,]$volume_sampeled[1]
+  
+  #juvenile empty
+  #adult empty
+  PIC_Gastropod_6_je[i,1] <-sum(st6_Gastropod[st6_Gastropod$net ==i & st6_Gastropod$stage == "juvenile" & st6_Gastropod$shell == "empty",  ]$PIC_total) / st6_Gastropod[st6_Gastropod$net ==i,]$volume_sampeled[1]
+  PIC_Gastropod_9_je[i,1] <-sum(st9_Gastropod[st9_Gastropod$net ==i & st9_Gastropod$stage =="juvenile" & st9_Gastropod$shell =="empty", ]$PIC_total) /st9_Gastropod[st9_Gastropod$net ==i,]$volume_sampeled[1]
+  
+  PIC_foram_6_je[i,1] <-sum(st6_Foram[st6_Foram$net ==i & st6_Foram$stage == "small" & st6_Foram$shell == "empty", ]$PIC_total) / st6_Foram[st6_Foram$net ==i,]$volume_sampeled[1]
+  PIC_foram_9_je[i,1] <-sum(st9_Foram[st9_Foram$net ==i & st9_Foram$stage == "small" & st9_Foram$shell == "empty", ]$PIC_total) / st9_Foram[st9_Foram$net ==i,]$volume_sampeled[1]
+  
+  
+}
+
+```
+
+
+
+```{r}
+#install.packages("ggpattern", repos="https://cran.r-project.org")
+
+# Load necessary libraries
+library(ggplot2)
+library(ggpubr)
+library(ggpattern)
+
+# Define Colors (Same background for full & empty types)
+custom_colors <- c(
+  "Planktonic gastropod adult full" = "#882255",  
+  "Planktonic gastropod adult empty" = "#882255",  
+  "Planktonic gastropod juvenile full" = "#D55E00",  
+  "Planktonic gastropod juvenile empty" = "#D55E00",
+  "Foraminifera >200um full" = "#0072B2",  
+  "Foraminifera >200um empty" = "#0072B2",
+  "Foraminifera 125-200um full" = "#56B4E9",  
+  "Foraminifera 125-200um empty" = "#56B4E9"
+)
+
+# Define Patterns
+custom_patterns <- c(
+  "Planktonic gastropod adult full" = "stripe",  # Dots effect
+  "Planktonic gastropod adult empty" = "none",
+  "Planktonic gastropod juvenile full" = "stripe",
+  "Planktonic gastropod juvenile empty" = "none",
+  "Foraminifera >200um full" = "stripe",
+  "Foraminifera >200um empty" = "none",
+  "Foraminifera 125-200um full" = "stripe",
+  "Foraminifera 125-200um empty" = "none"
+)
+
+# Custom theme
+custom_theme <- theme_classic() + 
+  theme(legend.position = "right", axis.text = element_text(size = 8),
+                      axis.title = element_text(size = 10),)
+
+# Function to create plots with patterns
+create_plot <- function(data, title, x_title = NULL, y_title = NULL) {
+  ggplot(data, aes(x = Concentration, y = Net, fill = type, pattern = type)) +
+    geom_bar_pattern(stat = "identity",
+                     color = "black",  # Thin black border around each bar
+                     size = 0.3,  # Thickness of the border
+                     pattern_fill = "black",  
+                     pattern_color = "black",
+                     pattern_density = 0.3,   # Adjust dot visibility
+                     pattern_spacing = 0.02, # Close spacing
+                     pattern_size = 0.6) +   # 125-200um dots
+    scale_fill_manual(values = custom_colors) +
+    scale_pattern_manual(values = custom_patterns) +
+    labs(title = title, x = x_title, y = y_title) +
+    custom_theme
+}
+
+```
+
+```{r}
+# Generate Data Frames (Same as before)
+df_St6_allnets <- data.frame(
+  Net = rep(c("1", "2", "3", "4", "5"), 8),
+  type = rep(c("Planktonic gastropod adult full", "Planktonic gastropod adult empty",
+               "Planktonic gastropod juvenile full", "Planktonic gastropod juvenile empty",
+               "Foraminifera >200um full", "Foraminifera >200um empty",
+               "Foraminifera 125-200um full", "Foraminifera 125-200um empty"), each = 5),
+  Concentration = c(PIC_Gastropod_6_af[,1], PIC_Gastropod_6_ae[,1], PIC_Gastropod_6_jf[,1], PIC_Gastropod_6_je[,1],
+                    PIC_foram_6_af[,1], PIC_foram_6_ae[,1], PIC_foram_6_jf[,1], PIC_foram_6_je[,1])
+)
+
+df_St6_lowernets <- data.frame(
+  Net = rep(c("1", "2", "3", "4"), 8),
+  type = rep(c("Planktonic gastropod adult full", "Planktonic gastropod adult empty",
+               "Planktonic gastropod juvenile full", "Planktonic gastropod juvenile empty",
+               "Foraminifera >200um full", "Foraminifera >200um empty",
+               "Foraminifera 125-200um full", "Foraminifera 125-200um empty"), each = 4),
+  Concentration = c(PIC_Gastropod_6_af[1:4,1], PIC_Gastropod_6_ae[1:4,1], PIC_Gastropod_6_jf[1:4,1], PIC_Gastropod_6_je[1:4,1],
+                    PIC_foram_6_af[1:4,1], PIC_foram_6_ae[1:4,1], PIC_foram_6_jf[1:4,1], PIC_foram_6_je[1:4,1])
+)
+
+df_St9_allnets <- data.frame(
+  Net = rep(c("1", "2", "3", "4", "5"), 8),
+  type = rep(c("Planktonic gastropod adult full", "Planktonic gastropod adult empty",
+               "Planktonic gastropod juvenile full", "Planktonic gastropod juvenile empty",
+               "Foraminifera >200um full", "Foraminifera >200um empty",
+               "Foraminifera 125-200um full", "Foraminifera 125-200um empty"), each = 5),
+  Concentration = c(PIC_Gastropod_9_af[,1], PIC_Gastropod_9_ae[,1], PIC_Gastropod_9_jf[,1], PIC_Gastropod_9_je[,1],
+                    PIC_foram_9_af[,1], PIC_foram_9_ae[,1], PIC_foram_9_jf[,1], PIC_foram_9_je[,1])
+)
+
+df_St9_lowernets <- data.frame(
+  Net = rep(c("1", "2"), 8),
+  type = rep(c("Planktonic gastropod adult full", "Planktonic gastropod adult empty",
+               "Planktonic gastropod juvenile full", "Planktonic gastropod juvenile empty",
+               "Foraminifera >200um full", "Foraminifera >200um empty",
+               "Foraminifera 125-200um full", "Foraminifera 125-200um empty"), each = 2),
+  Concentration = c(PIC_Gastropod_9_af[1:2,1], PIC_Gastropod_9_ae[1:2,1], PIC_Gastropod_9_jf[1:2,1], PIC_Gastropod_9_je[1:2,1],
+                    PIC_foram_9_af[1:2,1], PIC_foram_9_ae[1:2,1], PIC_foram_9_jf[1:2,1], PIC_foram_9_je[1:2,1])
+)
+
+# Generate plots
+plotALLnets6 <- create_plot(df_St6_allnets, "Station 6 all nets", x_title = NULL, y_title = "Net")
+plotALLnets9 <- create_plot(df_St9_allnets, "Station 9 all nets", x_title = NULL, y_title = NULL)
+plotLOWERnets6 <- create_plot(df_St6_lowernets, "Station 6 lower nets", x_title = "Concentration PIC (mg/m3)", y_title = "Net")
+plotLOWERnets9 <- create_plot(df_St9_lowernets, "Station 9 lower nets", x_title = "Concentration PIC (mg/m3)", y_title = NULL)
+
+# Arrange plots with shared legend
+final_plot <- ggarrange(plotALLnets6, plotALLnets9, plotLOWERnets6, plotLOWERnets9,
+                        labels = c("A", "B", "C", "D"),
+                        ncol = 2, nrow = 2,
+                        common.legend = TRUE, legend = "right")  
+
+# Display
+print(final_plot)
+
+# Save figure as a pdf file
+#ggsave("Foram_Gastropod_net.pdf", final_plot , width = 8, height = 6, dpi = 300)
+```

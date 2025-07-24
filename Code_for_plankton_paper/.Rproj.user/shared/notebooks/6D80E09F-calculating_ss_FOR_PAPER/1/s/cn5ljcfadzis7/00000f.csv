@@ -1,0 +1,4 @@
+"0",""
+"0","# Plankton data"
+"0","Planktondata <- read.csv(""data_files_for_plotting/All_plankton_PIC_station_3_4_6_9_FOR_PUBLICATION.csv"", sep = "";"")"
+"0",""

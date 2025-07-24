@@ -1,0 +1,123 @@
+---
+title: "Cocco_concentrations"
+author: "Anne Kruijt"
+date: "2025-07-07"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+## CODE DESCRIPTION:
+Script to plot the measured coccolith and coccopsphere concentrations at stations 3 and 4 (same locations, separate rosette casts) from the BEYOND expedition. 
+
+# Loading relevant packages
+```{r}
+
+library(ggplot2)
+require(reshape2)
+library(ggpubr)
+library(grid)
+library(dplyr)
+library(viridis)
+library(readxl)
+library(patchwork)
+```
+
+
+
+# Reading in data
+
+```{r}
+
+# Plankton data
+Planktondata <- read.csv("data_files_for_plotting/All_plankton_PIC_station_3_4_6_9_FOR_PUBLICATION.csv", sep=";")
+
+# Adding fluorescence data
+Fluorescence <- read_excel("data_files_for_plotting/fluorescence-data.xlsx") 
+
+```
+
+
+# Creating separate datafames for coccolith and coccospheres
+```{r}
+
+Df_Coccolith <- Planktondata[Planktondata$plankton == "coccolith", ]
+
+Df_Coccolithophore <- Planktondata[Planktondata$plankton == "coccolithophore", ]
+
+
+```
+
+
+# Extracting concentration from total PIC mass measured at each depth
+```{r}
+
+PIC_coccolith <- Df_Coccolith$PIC_conc 
+PIC_coccolithophore <- Df_Coccolithophore$PIC_conc
+
+
+```
+
+
+
+# creating dataframes for plotting
+```{r}
+fluorescence_df <- data.frame(
+  Depth = -1 *Fluorescence$depth,
+  Fluorescence = Fluorescence$`fluorecence chelsea` )
+
+plankton1_df <- data.frame(
+  Depth = -1* Df_Coccolith$depth_average,
+  Plankton1 = PIC_coccolith
+)
+
+plankton2_df <- data.frame(
+  Depth = -1 * Df_Coccolithophore$depth_average,
+  Plankton2 = PIC_coccolithophore
+)
+
+```
+
+
+```{r}
+library(ggplot2)
+library(ggpubr)
+
+# Create individual plots
+p1 <- ggplot(na.omit(fluorescence_df), aes(y = Fluorescence, x = Depth)) +
+  geom_point(color = "black", size = 2) + 
+  geom_line(color = "black", size = 1) +
+  theme_minimal() +
+  labs(y = "Fluorescence", x = "Depth [m]") +
+  coord_flip()
+
+p2 <- ggplot(na.omit(plankton1_df), aes(y = Plankton1, x = Depth)) +
+  geom_point(color = "#E69F00", size = 2) + 
+  geom_line(color = "#E69F00", size = 1) +
+  theme_minimal() +
+  labs(y = "Coccoliths [mg/m3]", x = NULL) +
+  coord_flip()
+
+p3 <- ggplot(na.omit(plankton2_df), aes(y = Plankton2, x = Depth)) +
+  geom_point(color = "#E69F00", size = 2) + 
+  geom_line(color = "#E69F00", size = 1) +
+  theme_minimal() +
+  labs(y = "Coccospheres [mg/m3]", x = NULL) +
+  coord_flip()
+
+# Arrange the plots
+coccoplot <- ggarrange(p1, p2 + rremove("y.text"), p3 + rremove("y.text"), 
+          labels = c("A", "B", "C"),
+          ncol = 3, nrow = 1)
+
+# show plot
+coccoplot
+
+
+
+# Save figure as a JPEG file
+#ggsave("Cocco_plot_updated.pdf", coccoplot , width = 8, height = 6, dpi = 300)
+
+```
+

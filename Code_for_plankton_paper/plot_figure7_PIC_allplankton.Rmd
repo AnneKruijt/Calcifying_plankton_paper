@@ -1,0 +1,184 @@
+---
+title: "PIC_all_plankton"
+author: "Anne Kruijt"
+date: "2025-01-06"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Loading relevant packages
+```{r}
+
+library(ggplot2)
+require(reshape2)
+library(ggpubr)
+library(grid)
+library(dplyr)
+library(viridis)
+library(readxl)
+library(patchwork)
+```
+
+
+
+# Reading in data
+
+```{r}
+
+
+# Plankton data
+Planktondata <- read.csv("data_files_for_plotting/All_plankton_PIC_station_3_4_6_9_FOR_PUBLICATION.csv", sep=";")
+
+# Adding fluorescence data
+Fluorescence <- read_excel("data_files_for_plotting/fluorescence-data.xlsx") 
+
+
+```
+
+# Creating separate datafames for each plankon type
+```{r}
+
+st6_Gastropod  <- Planktondata[Planktondata$plankton == "gastropod" & Planktondata$station == 6, ]
+st6_Foram <- Planktondata[Planktondata$plankton == "foram" & Planktondata$station == 6, ]
+st9_Gastropod  <- Planktondata[Planktondata$plankton == "gastropod" & Planktondata$station == 9, ]
+st9_Foram <- Planktondata[Planktondata$plankton == "foram" & Planktondata$station == 9, ]
+st3_4_Coccolith <- Planktondata[Planktondata$plankton == "coccolith", ]
+st3_4_Coccolithophore <- Planktondata[Planktondata$plankton == "coccolithophore", ]
+
+
+```
+
+# Calculating total PIC concentration at each depth for each plankton type
+```{r}
+
+# Here, for each plankton type, for each net I sum up ALL PIC, so both adult and juvenile (or for forams '100-200um, and '<200um'), and both from full and empty shells
+
+
+# calculating total per depth
+nets <- c(5,4,3,2,1)
+# empty arrays to be filled
+PIC_Gastropod_6 <- matrix(,nrow=5,ncol=1)
+PIC_Gastropod_9 <- matrix(,nrow=5,ncol=1)
+PIC_foram_6 <- matrix(,nrow=5,ncol=1)
+PIC_foram_9 <- matrix(,nrow=5,ncol=1)
+
+
+PIC_coccolith_3_4 <- matrix(,nrow = 11 , ncol =1)
+PIC_cocco_phore_3_4 <- matrix(,nrow = 11 , ncol =1)
+
+for (i in nets){
+  # totals
+  PIC_Gastropod_6[i,1] <-sum(st6_Gastropod[st6_Gastropod$net ==i, ]$PIC_total) / st6_Gastropod[st6_Gastropod$net ==i,]$volume_sampeled[1]
+  PIC_Gastropod_9[i,1] <-sum(st9_Gastropod[st9_Gastropod$net ==i, ]$PIC_total) /st9_Gastropod[st9_Gastropod$net ==i,]$volume_sampeled[1]
+  PIC_foram_6[i,1] <-sum(st6_Foram[st6_Foram$net ==i, ]$PIC_total) / st6_Foram[st6_Foram$net ==i,]$volume_sampeled[1]
+  PIC_foram_9[i,1] <-sum(st9_Foram[st9_Foram$net ==i, ]$PIC_total) / st9_Foram[st9_Foram$net ==i,]$volume_sampeled[1]
+  }
+
+# For cocco PIC I sum up the PIC derived from coccospheres and coccolithophores
+PIC_coccolith_3_4[,1] <- (st3_4_Coccolith$PIC_total) / st3_4_Coccolith$volume_sampeled
+PIC_cocco_phore_3_4[,1] <-(st3_4_Coccolithophore$PIC_total) / st3_4_Coccolith$volume_sampeled
+
+
+```
+# Data cleaning
+```{r}
+# removing the data entry at 175m and -3000m  for coccosphere and coccolith measurements, which are an incorrect measurements
+
+PIC_cocco_phore_cleaned <- PIC_cocco_phore_3_4[-c(3,9)] 
+
+PIC_coccolith_cleaned <- PIC_coccolith_3_4[-c(3,9)]
+
+```
+
+
+# Making separate dataframes and plotting plankton PIC separately
+# 
+```{r}
+fluorescence_df <- data.frame(
+  Depth = -1 *Fluorescence$depth,
+  Fluorescence = Fluorescence$`fluorecence chelsea` )
+
+plankton1_df <- data.frame(
+  Depth = -1*(c(5, 100, 250, 400, 650, 1000, 2000, 4000, 4905)) ,
+  Plankton1 = PIC_coccolith_cleaned
+)
+
+plankton2_df <- data.frame(
+  Depth = -1*(c(5, 100, 250, 400, 650, 1000, 2000, 4000, 4905)),
+  Plankton2 = PIC_cocco_phore_cleaned
+)
+
+plankton3_df <- data.frame(
+   Depth = -1*rev(c(75, 175, 250, 400, 650, 800, 4905)) ,
+   # Add two nan elements corresponding to depths that were not sampled
+  Plankton3 = c(NaN, NaN,PIC_Gastropod_6)
+)
+
+plankton4_df <- data.frame(
+  Depth = -1*rev(c(75, 175, 250, 400, 650, 800, 4905)) ,
+  # Add two nan elements corresponding to depths that were not sampled
+  Plankton4 = c(NaN, NaN,PIC_foram_6)
+)
+```
+
+```{r , echo=FALSE}
+
+custom_theme <- theme_minimal() +
+                theme(axis.text = element_text(size = 8),
+                      axis.title = element_text(size = 10),)
+
+# Create individual plots
+p1 <- ggplot(fluorescence_df, aes(y = Fluorescence, x = Depth)) +
+  geom_point(size =2, color = "black")+
+  geom_line(color = "black", size = 1) +
+  labs(y = "Fluorescence", x = "Depth [m]") +
+  custom_theme+
+  coord_flip()
+
+
+p2 <- ggplot(plankton1_df, aes(y = Plankton1, x = Depth)) +
+  geom_point(color = "#E69F00",size =2)+
+  geom_line(color = "#E69F00", size = 1)+
+  labs(y = "Coccoliths [mg/m3]", x = NULL) +
+  custom_theme +
+  coord_flip()
+
+
+p3 <- ggplot(plankton2_df, aes(y = Plankton2, x = Depth)) +
+  geom_point(color = "#E69F00", size =2)+
+  geom_line(color = "#E69F00", size = 1) +
+  labs(y = "Coccospheres [mg/m3]", x = NULL)+
+  custom_theme +
+  coord_flip()
+
+p4 <- ggplot(plankton3_df, aes(y = Plankton3, x = Depth)) +
+  geom_point(color = "#D55E00", size = 2 )+
+  geom_line(color = "#D55E00", size = 1) +
+  labs(y = "Gastropods [mg/m3]", x = NULL)+
+  custom_theme +
+  coord_flip()
+
+p5 <- ggplot(plankton4_df, aes(y = Plankton4, x = Depth)) +
+  geom_point(color = "#0072B2", size =2)+
+  geom_line(color = "#0072B2", size = 1) +
+  labs(y = "Foraminifera [mg/m3]", x = NULL)+
+  custom_theme +
+  scale_y_continuous(breaks = scales::breaks_pretty(n = 3))+
+  coord_flip()
+  
+
+PIC_all_sep_plot <- ggarrange(p1, p2 + rremove("y.text"), p3 + rremove("y.text") ,  p4  + rremove("y.text"),  p5  + rremove("y.text"),
+          labels = c("A", "B", "C", "D", "E"),
+          ncol = 5, nrow = 1)
+
+PIC_all_sep_plot
+# Save figure as a pdf file
+#ggsave("PIC_all_separate_plot_updated.pdf", PIC_all_sep_plot , width = 8, height = 6, dpi = 300)
+
+
+```
+
+

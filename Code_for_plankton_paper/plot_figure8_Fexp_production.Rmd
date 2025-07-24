@@ -1,0 +1,54 @@
+---
+title: "Exp_Prod_plots"
+author: "Anne Kruijt"
+date: "2025-07-07"
+output: html_document
+---
+Purpose of script: 
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## load packages -------------
+```{r}
+
+library(ggplot2)
+library("readxl")
+library(ggpubr)
+
+```
+
+# read in data for plotting
+```{r}
+
+# Export and production values
+data <- read.csv("data_files_for_plotting/MC_analysis_results_FOR_PLOTTING.csv", sep=";")
+
+
+```
+
+
+```{r}
+# Remove NA values to prevent errors
+data <- na.omit(data)
+
+
+# Create the plot with log scale
+final_plot <- ggplot(data, aes(x = Plankton_Group, y = Value, color = Type)) +
+  geom_point(size = 3) +  # Points instead of bars
+  geom_errorbar(aes(ymin = pmax(Value - StdDev, 0.0001), ymax = Value + StdDev), width = 0.2) + # Avoid log(0) errors
+  scale_y_log10(name = "Value (mg/m2/day)") +  # Logarithmic scale for readability
+  labs(title = "Comparison of production and export values per plankton group",
+       x = "Plankton Group") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+scale_color_manual(values = c("Production" = "#0072B2", "Export" = "#E69F00"))  # Colorblind-friendly colors
+
+print(final_plot)
+
+# Save figure 
+#ggsave("Exp_prod.pdf", final_plot , width = 8, height = 6, dpi = 300)
+
+```
