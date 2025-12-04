@@ -113,9 +113,14 @@ tt_high_f <- 28
 tt_low_c <- 0.6
 tt_high_c <- 10
 
+tt_low_g_extra <-183 # 6 months
+tt_high_g_extra <- 365 # 1 year
 
 
 results_gastropods <- monte_carlo_production(SS_av_gastro, ss_uncertainty =  0.25, tt_low =  tt_low_g, tt_high = tt_high_g, n_simulations = 100000, confidence_level = 0.95 )
+
+results_gastropds_extra <- monte_carlo_production(SS_av_gastro, ss_uncertainty =  0.25, tt_low =  tt_low_g_extra, tt_high = tt_high_g_extra, n_simulations = 100000, confidence_level = 0.95 )
+
 
 results_forams <- monte_carlo_production(SS_av_foram, ss_uncertainty =  0.25, tt_low =  tt_low_f, tt_high = tt_high_f, n_simulations = 100000, confidence_level = 0.95 )
 
