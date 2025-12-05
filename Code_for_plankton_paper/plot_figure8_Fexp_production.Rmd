@@ -24,7 +24,7 @@ library(ggpubr)
 ```{r}
 
 # Export and production values
-data <- read.csv("data_files_for_plotting/MC_analysis_results_FOR_PLOTTING.csv", sep=";")
+data <- read_excel("data_files_for_plotting/MC_analysis_results_FOR_PLOTTING.xlsx")
 
 
 ```
@@ -32,7 +32,7 @@ data <- read.csv("data_files_for_plotting/MC_analysis_results_FOR_PLOTTING.csv",
 
 ```{r}
 # Remove NA values to prevent errors
-data <- na.omit(data)
+
 
 
 # Create the plot with log scale
