@@ -49,6 +49,6 @@ scale_color_manual(values = c("Production" = "#0072B2", "Export" = "#E69F00"))  
 print(final_plot)
 
 # Save figure 
-#ggsave("Exp_prod.pdf", final_plot , width = 8, height = 6, dpi = 300)
+ggsave("Exp_prod.pdf", final_plot , width = 8, height = 6, dpi = 300)
 
 ```
